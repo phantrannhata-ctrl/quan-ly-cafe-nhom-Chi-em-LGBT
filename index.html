@@ -1,0 +1,1551 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Cà Phê Mộc - Hệ Thống Quản Lý Quán Cafe</title>
+  <style>
+    :root {
+      --primary: #854d0e;
+      --primary-dark: #713f12;
+      --primary-light: #fef08a;
+      --accent: #d97706;
+      --accent-hover: #b45309;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --warning: #ea580c;
+      --info: #0284c7;
+      --radius: 12px;
+      --shadow: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.08);
+      --font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font); }
+    body { background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* Layout */
+    .app-header {
+      background: #451a03;
+      color: #fff;
+      padding: 12px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand-icon {
+      background: #fbbf24;
+      color: #451a03;
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      font-size: 20px;
+      font-weight: bold;
+    }
+    .brand-title { font-size: 1.15rem; font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; }
+    .brand-sub { font-size: 0.72rem; color: #fde68a; }
+
+    .header-user { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; }
+    .user-badge { background: rgba(255,255,255,0.18); padding: 5px 10px; border-radius: 20px; font-weight: 500; font-size: 0.75rem; }
+
+    /* Navigation */
+    .nav-container {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 62px;
+      z-index: 90;
+      overflow-x: auto;
+      white-space: nowrap;
+      scrollbar-width: none;
+    }
+    .nav-container::-webkit-scrollbar { display: none; }
+    .nav-tabs { display: flex; padding: 6px 12px; gap: 6px; }
+    .nav-btn {
+      background: transparent;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    .nav-btn:hover { background: #f1f5f9; color: var(--text); }
+    .nav-btn.active {
+      background: #78350f;
+      color: #ffffff;
+      box-shadow: 0 2px 4px rgba(120,53,15,0.25);
+    }
+
+    /* Main Container */
+    .main-body { flex: 1; padding: 16px; max-width: 1400px; margin: 0 auto; width: 100%; }
+    .tab-content { display: none; animation: fadeIn 0.2s ease; }
+    .tab-content.active { display: block; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Notification Toast */
+    #toast-box {
+      position: fixed;
+      bottom: 24px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 9999;
+      pointer-events: none;
+    }
+    .toast {
+      background: #1e293b;
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 10px;
+      font-size: 0.875rem;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      pointer-events: auto;
+      animation: slideIn 0.25s ease, fadeOut 0.3s ease 2.7s forwards;
+      min-width: 250px;
+      border-left: 4px solid var(--accent);
+    }
+    .toast.success { border-left-color: var(--success); }
+    .toast.error { border-left-color: var(--danger); }
+    .toast.warning { border-left-color: var(--warning); }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes fadeOut { to { opacity: 0; transform: translateY(10px); } }
+
+    /* Cards & Stats */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 18px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .stat-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+    .stat-icon.brown { background: #fef3c7; color: #92400e; }
+    .stat-icon.green { background: #dcfce7; color: #15803d; }
+    .stat-icon.blue { background: #e0f2fe; color: #0369a1; }
+    .stat-icon.red { background: #fee2e2; color: #b91c1c; }
+    .stat-val { font-size: 1.5rem; font-weight: 700; margin-top: 4px; }
+    .stat-lbl { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; text-transform: uppercase; }
+
+    /* Panels & Tables */
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      background: #fafafa;
+    }
+    .card-title { font-size: 1.1rem; font-weight: 700; color: #334155; display: flex; align-items: center; gap: 8px; }
+    .card-body { padding: 18px; }
+
+    .table-responsive { width: 100%; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; text-align: left; }
+    th { background: #f1f5f9; padding: 12px 14px; font-weight: 600; color: #475569; border-bottom: 1px solid var(--border); }
+    td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background-color: #f8fafc; }
+
+    /* Badge & Status */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge.success { background: #dcfce7; color: #166534; }
+    .badge.warning { background: #fef3c7; color: #92400e; }
+    .badge.danger { background: #fee2e2; color: #991b1b; }
+    .badge.info { background: #e0f2fe; color: #075985; }
+
+    /* Buttons & Inputs */
+    .btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+    .btn-primary { background: #78350f; color: #fff; }
+    .btn-primary:hover { background: #451a03; }
+    .btn-secondary { background: #e2e8f0; color: #334155; }
+    .btn-secondary:hover { background: #cbd5e1; }
+    .btn-danger { background: #ef4444; color: #fff; }
+    .btn-danger:hover { background: #dc2626; }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn-outline:hover { background: #f1f5f9; }
+    .btn-sm { padding: 5px 10px; font-size: 0.75rem; border-radius: 6px; }
+
+    .input-group { display: flex; gap: 8px; align-items: center; }
+    .input-control {
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      outline: none;
+      font-size: 0.88rem;
+      transition: border 0.2s;
+      background: #fff;
+    }
+    .input-control:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(217,119,6,0.15); }
+
+    /* POS Screen Styles */
+    .pos-layout {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 20px;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .pos-layout { grid-template-columns: 1fr; }
+    }
+
+    .pos-menu-section { display: flex; flex-direction: column; gap: 14px; }
+    .pos-categories {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: none;
+    }
+    .cat-pill {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .cat-pill.active { background: #92400e; color: #fff; border-color: #92400e; }
+
+    .pos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 14px;
+    }
+    .menu-item-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 14px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .menu-item-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); border-color: #d97706; }
+    .item-badge-out {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(220,38,38,0.9);
+      color: #fff;
+      font-size: 0.68rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+    .item-icon-box {
+      width: 44px;
+      height: 44px;
+      background: #fef3c7;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      font-size: 22px;
+    }
+    .item-name { font-weight: 600; font-size: 0.95rem; line-height: 1.3; }
+    .item-cat { font-size: 0.75rem; color: var(--text-muted); }
+    .item-price { font-weight: 700; color: #92400e; font-size: 1rem; margin-top: 4px; }
+
+    /* Cart Drawer / Sidebar */
+    .pos-cart {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 150px);
+      min-height: 520px;
+      position: sticky;
+      top: 130px;
+    }
+    .cart-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fdf8f6;
+    }
+    .cart-items {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .cart-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px;
+      background: #f8fafc;
+      border-radius: 8px;
+      border: 1px solid #edf2f7;
+      gap: 8px;
+    }
+    .cart-item-info { flex: 1; }
+    .cart-item-name { font-weight: 600; font-size: 0.88rem; }
+    .cart-item-price { font-size: 0.8rem; color: #78350f; font-weight: 600; }
+    .cart-qty-ctrl { display: flex; align-items: center; gap: 6px; }
+    .qty-btn {
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: #fff;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      font-weight: bold;
+      font-size: 0.9rem;
+    }
+    .qty-btn:hover { background: #f1f5f9; }
+    .cart-qty-val { font-size: 0.88rem; font-weight: 700; width: 20px; text-align: center; }
+
+    .cart-summary {
+      padding: 16px;
+      border-top: 1px solid var(--border);
+      background: #fafafa;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .sum-row { display: flex; justify-content: space-between; font-size: 0.88rem; color: #475569; }
+    .sum-total { font-size: 1.15rem; font-weight: 700; color: #1e293b; padding-top: 6px; border-top: 1px dashed var(--border); }
+    .cart-actions { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(2px);
+      z-index: 999;
+      display: none;
+      place-items: center;
+      padding: 16px;
+    }
+    .modal-backdrop.open { display: grid; }
+    .modal-dialog {
+      background: #fff;
+      border-radius: var(--radius);
+      max-width: 500px;
+      width: 100%;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+      animation: modalZoom 0.2s ease;
+      overflow: hidden;
+    }
+    @keyframes modalZoom { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .modal-head {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fdf8f6;
+    }
+    .modal-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+    .modal-foot { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; background: #f8fafc; }
+
+    /* Bar Chart Custom SVG */
+    .chart-container {
+      width: 100%;
+      height: 240px;
+      display: flex;
+      align-items: flex-end;
+      gap: 14px;
+      padding: 20px 10px 10px 10px;
+      border-bottom: 2px solid var(--border);
+      margin-top: 10px;
+    }
+    .chart-bar-group {
+      flex: 1;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 6px;
+    }
+    .chart-bar {
+      width: 80%;
+      max-width: 44px;
+      background: linear-gradient(180deg, #d97706 0%, #78350f 100%);
+      border-radius: 6px 6px 0 0;
+      transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      cursor: pointer;
+    }
+    .chart-bar:hover { opacity: 0.85; }
+    .chart-tooltip {
+      position: absolute;
+      top: -28px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #0f172a;
+      color: #fff;
+      font-size: 0.68rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      white-space: nowrap;
+      display: none;
+    }
+    .chart-bar:hover .chart-tooltip { display: block; }
+    .chart-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-icon">☕</div>
+      <div>
+        <div class="brand-title">CÀ PHÊ MỘC</div>
+        <div class="brand-sub">Hệ Thống Quản Lý F&B</div>
+      </div>
+    </div>
+    <div class="header-user">
+      <span class="user-badge">🟢 Ca sáng: Nguyễn Văn Quản Lý</span>
+    </div>
+  </header>
+
+  <!-- Navigation -->
+  <nav class="nav-container">
+    <div class="nav-tabs">
+      <button class="nav-btn active" onclick="switchTab('dashboard')">📊 Tổng quan</button>
+      <button class="nav-btn" onclick="switchTab('pos')">🛒 Bán hàng (POS)</button>
+      <button class="nav-btn" onclick="switchTab('orders')">📝 Quản lý đơn hàng</button>
+      <button class="nav-btn" onclick="switchTab('menu')">📋 Thực đơn (80 món)</button>
+      <button class="nav-btn" onclick="switchTab('inventory')">📦 Kho nguyên liệu</button>
+      <button class="nav-btn" onclick="switchTab('staff')">👥 Nhân viên (8)</button>
+      <button class="nav-btn" onclick="switchTab('reports')">📈 Báo cáo doanh thu</button>
+    </div>
+  </nav>
+
+  <!-- Notification Toast Container -->
+  <div id="toast-box"></div>
+
+  <!-- Main Content Area -->
+  <main class="main-body">
+
+    <!-- 1. DASHBOARD -->
+    <section id="tab-dashboard" class="tab-content active">
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-icon green">💰</div>
+          <div>
+            <div class="stat-lbl">Doanh thu hôm nay</div>
+            <div class="stat-val" id="dash-revenue">4,850,000 đ</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon blue">📦</div>
+          <div>
+            <div class="stat-lbl">Tổng đơn hàng</div>
+            <div class="stat-val" id="dash-orders">64 đơn</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon brown">☕</div>
+          <div>
+            <div class="stat-lbl">Món phục vụ</div>
+            <div class="stat-val">142 ly</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon red">⚠️</div>
+          <div>
+            <div class="stat-lbl">Cảnh báo kho</div>
+            <div class="stat-val" id="dash-warning">3 mục sắp hết</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🔥 Top Món Bán Chạy Nhất</div>
+            <button class="btn btn-sm btn-outline" onclick="switchTab('menu')">Xem tất cả</button>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Món</th>
+                    <th>Giá</th>
+                    <th>Đã bán</th>
+                    <th>Doanh thu</th>
+                  </tr>
+                </thead>
+                <tbody id="dash-top-products">
+                  <!-- Injected via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🚨 Cảnh Báo Tồn Kho Sắp Hết</div>
+            <button class="btn btn-sm btn-outline" onclick="switchTab('inventory')">Nhập kho ngay</button>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Nguyên liệu</th>
+                    <th>Tồn kho</th>
+                    <th>Định mức tối thiểu</th>
+                    <th>Tình trạng</th>
+                  </tr>
+                </thead>
+                <tbody id="dash-low-stock">
+                  <!-- Injected via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. BÁN HÀNG (POS) -->
+    <section id="tab-pos" class="tab-content">
+      <div class="pos-layout">
+        <!-- Products list & search -->
+        <div class="pos-menu-section">
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <input type="text" id="pos-search" class="input-control" style="flex: 1;" placeholder="🔍 Tìm kiếm món theo tên..." oninput="renderPosItems()">
+            <select id="pos-table-select" class="input-control">
+              <option value="Mang đi">Mang đi</option>
+              <option value="Bàn 1">Bàn 1 (Tầng 1)</option>
+              <option value="Bàn 2">Bàn 2 (Tầng 1)</option>
+              <option value="Bàn 3">Bàn 3 (Tầng 1)</option>
+              <option value="Bàn 4">Bàn 4 (Tầng 2)</option>
+              <option value="Bàn 5">Bàn 5 (Sân vườn)</option>
+            </select>
+          </div>
+
+          <div class="pos-categories" id="pos-category-filters">
+            <!-- Filter pills -->
+          </div>
+
+          <div class="pos-grid" id="pos-products-grid">
+            <!-- Menu cards injected via JS -->
+          </div>
+        </div>
+
+        <!-- Order / Cart Sidebar -->
+        <div class="pos-cart">
+          <div class="cart-header">
+            <div>
+              <div style="font-weight: 700; font-size: 1rem;">Đơn hiện tại</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);" id="current-order-target">Mục tiêu: Mang đi</div>
+            </div>
+            <button class="btn btn-sm btn-outline" onclick="clearCart()">Xóa giỏ</button>
+          </div>
+
+          <div class="cart-items" id="cart-items-container">
+            <!-- Cart items injected -->
+          </div>
+
+          <div class="cart-summary">
+            <div class="sum-row">
+              <span>Tạm tính</span>
+              <span id="cart-subtotal">0 đ</span>
+            </div>
+            <div class="sum-row">
+              <span>Giảm giá</span>
+              <span>0 đ</span>
+            </div>
+            <div class="sum-row sum-total">
+              <span>Tổng thanh toán</span>
+              <span id="cart-total" style="color: #92400e;">0 đ</span>
+            </div>
+            <div class="cart-actions">
+              <button class="btn btn-secondary" onclick="saveDraftOrder()">Lưu tạm</button>
+              <button class="btn btn-primary" onclick="checkoutOrder()">Thanh toán ngay</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. QUẢN LÝ ĐƠN HÀNG -->
+    <section id="tab-orders" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Danh Sách Đơn Hàng Gần Đây</div>
+          <div class="input-group">
+            <input type="text" id="order-search" class="input-control" placeholder="Mã đơn hoặc bàn..." oninput="renderOrdersTable()">
+            <select id="order-status-filter" class="input-control" onchange="renderOrdersTable()">
+              <option value="ALL">Tất cả trạng thái</option>
+              <option value="Hoàn thành">Hoàn thành</option>
+              <option value="Đang pha chế">Đang pha chế</option>
+              <option value="Chờ xác nhận">Chờ xác nhận</option>
+              <option value="Đã hủy">Đã hủy</option>
+            </select>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Mã đơn</th>
+                  <th>Thời gian</th>
+                  <th>Khu vực / Bàn</th>
+                  <th>Chi tiết món</th>
+                  <th>Tổng tiền</th>
+                  <th>Trạng thái</th>
+                  <th>Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="orders-table-body">
+                <!-- Orders -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. QUẢN LÝ THỰC ĐƠN -->
+    <section id="tab-menu" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Danh Sách Thực Đơn (80 Món F&B)</div>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="menu-search-input" class="input-control" placeholder="Tìm tên món..." oninput="renderMenuManagementTable()">
+            <button class="btn btn-primary" onclick="openAddMenuModal()">+ Thêm món mới</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Tên món</th>
+                  <th>Danh mục</th>
+                  <th>Giá niêm yết</th>
+                  <th>Trạng thái bán</th>
+                  <th>Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="menu-management-body">
+                <!-- Menu Rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. QUẢN LÝ KHO NGUYÊN LIỆU -->
+    <section id="tab-inventory" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Kiểm Soát Tồn Kho Nguyên Vật Liệu</div>
+          <button class="btn btn-primary" onclick="openAddStockModal()">+ Nhập thêm kho</button>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Mã NL</th>
+                  <th>Tên nguyên liệu</th>
+                  <th>Đơn vị tính</th>
+                  <th>Lượng tồn</th>
+                  <th>Mức cảnh báo</th>
+                  <th>Đánh giá trạng thái</th>
+                  <th>Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="inventory-table-body">
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. QUẢN LÝ NHÂN VIÊN -->
+    <section id="tab-staff" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Đội Ngũ Nhân Sự Quán (8 Nhân viên)</div>
+          <button class="btn btn-primary" onclick="openAddStaffModal()">+ Thêm nhân sự</button>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Mã NV</th>
+                  <th>Họ và tên</th>
+                  <th>Số điện thoại</th>
+                  <th>Vai trò</th>
+                  <th>Ca làm việc</th>
+                  <th>Tình trạng</th>
+                  <th>Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="staff-table-body">
+                <!-- Staff -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. BÁO CÁO & BIỂU ĐỒ DOANH THU -->
+    <section id="tab-reports" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📈 Biểu Đồ Doanh Thu 7 Ngày Gần Nhất</div>
+          <span style="font-size: 0.84rem; color: var(--text-muted);">Đơn vị tính: VNĐ</span>
+        </div>
+        <div class="card-body">
+          <div class="chart-container" id="revenue-bar-chart">
+            <!-- Custom CSS & SVG Bar Chart -->
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Báo Cáo Chi Tiết Theo Ngày</div>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Ngày</th>
+                  <th>Số lượng đơn</th>
+                  <th>Tổng doanh thu</th>
+                  <th>Chi phí ước tính</th>
+                  <th>Lợi nhuận ròng</th>
+                </tr>
+              </thead>
+              <tbody id="daily-report-table">
+                <!-- Reports -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Modal Component for Dynamic Input -->
+  <div class="modal-backdrop" id="generic-modal">
+    <div class="modal-dialog">
+      <div class="modal-head">
+        <div style="font-weight: 700; font-size: 1.05rem;" id="modal-title">Tiêu đề Modal</div>
+        <button class="btn btn-sm btn-outline" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body" id="modal-content">
+        <!-- Content will be injected -->
+      </div>
+      <div class="modal-foot" id="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal()">Hủy</button>
+        <button class="btn btn-primary" id="modal-confirm-btn">Xác nhận</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Pure Logic -->
+  <script>
+    // --- 1. DỮ LIỆU MẪU MẶC ĐỊNH (80 Món phong phú) ---
+    const CATEGORIES = ["Tất cả", "Cà Phê Truyền Thống", "Cà Phê Pha Máy", "Trà Trái Cây", "Trà Sữa & Macchiato", "Bánh Ngọt & Ăn Vặt"];
+
+    let menuList = [
+      // Cà Phê Truyền Thống
+      { id: 1, name: "Cà phê đen đá", cat: "Cà Phê Truyền Thống", price: 22000, active: true, sold: 145, icon: "☕" },
+      { id: 2, name: "Cà phê sữa đá Sài Gòn", cat: "Cà Phê Truyền Thống", price: 25000, active: true, sold: 280, icon: "🥤" },
+      { id: 3, name: "Bạc xỉu 3 tầng", cat: "Cà Phê Truyền Thống", price: 28000, active: true, sold: 195, icon: "🥛" },
+      { id: 4, name: "Cà phê muối Huế", cat: "Cà Phê Truyền Thống", price: 32000, active: true, sold: 210, icon: "🧂" },
+      { id: 5, name: "Cà phê trứng Hà Nội", cat: "Cà Phê Truyền Thống", price: 35000, active: true, sold: 78, icon: "🍳" },
+      { id: 6, name: "Cà phê cốt dừa", cat: "Cà Phê Truyền Thống", price: 35000, active: true, sold: 112, icon: "🥥" },
+      { id: 7, name: "Cà phê đen nóng", cat: "Cà Phê Truyền Thống", price: 20000, active: true, sold: 45, icon: "☕" },
+      { id: 8, name: "Cà phê sữa nóng", cat: "Cà Phê Truyền Thống", price: 24000, active: true, sold: 32, icon: "☕" },
+
+      // Cà Phê Pha Máy
+      { id: 9, name: "Espresso Single", cat: "Cà Phê Pha Máy", price: 30000, active: true, sold: 65, icon: "☕" },
+      { id: 10, name: "Americano Đá", cat: "Cà Phê Pha Máy", price: 32000, active: true, sold: 156, icon: "🧊" },
+      { id: 11, name: "Caffe Latte", cat: "Cà Phê Pha Máy", price: 42000, active: true, sold: 130, icon: "☕" },
+      { id: 12, name: "Cappuccino bọt sữa", cat: "Cà Phê Pha Máy", price: 42000, active: true, sold: 110, icon: "☕" },
+      { id: 13, name: "Caramel Macchiato", cat: "Cà Phê Pha Máy", price: 48000, active: true, sold: 98, icon: "🍮" },
+      { id: 14, name: "Mocha Socola", cat: "Cà Phê Pha Máy", price: 48000, active: true, sold: 74, icon: "🍫" },
+      { id: 15, name: "Cold Brew cam vàng", cat: "Cà Phê Pha Máy", price: 45000, active: true, sold: 134, icon: "🍊" },
+      { id: 16, name: "Cold Brew truyền thống", cat: "Cà Phê Pha Máy", price: 40000, active: true, sold: 82, icon: "🧊" },
+
+      // Trà Trái Cây
+      { id: 17, name: "Trà đào cam sả", cat: "Trà Trái Cây", price: 38000, active: true, sold: 310, icon: "🍑" },
+      { id: 18, name: "Trà vải hoa hồng", cat: "Trà Trái Cây", price: 38000, active: true, sold: 160, icon: "🌹" },
+      { id: 19, name: "Trà mãng cầu xiêm", cat: "Trà Trái Cây", price: 35000, active: true, sold: 220, icon: "🍈" },
+      { id: 20, name: "Trà ổi hồng chanh dây", cat: "Trà Trái Cây", price: 36000, active: true, sold: 145, icon: "🧃" },
+      { id: 21, name: "Trà dâu tây tằm", cat: "Trà Trái Cây", price: 38000, active: true, sold: 175, icon: "🍓" },
+      { id: 22, name: "Trà chanh giã tay", cat: "Trà Trái Cây", price: 30000, active: true, sold: 290, icon: "🍋" },
+      { id: 23, name: "Trà sen vàng củ năng", cat: "Trà Trái Cây", price: 42000, active: true, sold: 185, icon: "🪷" },
+      { id: 24, name: "Trà táo bạc hà", cat: "Trà Trái Cây", price: 35000, active: false, sold: 40, icon: "🍏" },
+
+      // Trà Sữa & Macchiato
+      { id: 25, name: "Trà sữa Ô long nướng", cat: "Trà Sữa & Macchiato", price: 40000, active: true, sold: 260, icon: "🧋" },
+      { id: 26, name: "Trà sữa trân châu hoàng kim", cat: "Trà Sữa & Macchiato", price: 42000, active: true, sold: 275, icon: "🧋" },
+      { id: 27, name: "Trà xanh lài Macchiato", cat: "Trà Sữa & Macchiato", price: 38000, active: true, sold: 120, icon: "🍵" },
+      { id: 28, name: "Sữa tươi trân châu đường đen", cat: "Trà Sữa & Macchiato", price: 45000, active: true, sold: 195, icon: "🥛" },
+      { id: 29, name: "Matcha Latte Nhật Bản", cat: "Trà Sữa & Macchiato", price: 45000, active: true, sold: 105, icon: "🍵" },
+
+      // Bánh & Ăn Vặt
+      { id: 30, name: "Bánh Croissant bơ tỏi", cat: "Bánh Ngọt & Ăn Vặt", price: 28000, active: true, sold: 85, icon: "🥐" },
+      { id: 31, name: "Tiramisu cacao", cat: "Bánh Ngọt & Ăn Vặt", price: 38000, active: true, sold: 92, icon: "🍰" },
+      { id: 32, name: "Bánh phô mai nướng Basque", cat: "Bánh Ngọt & Ăn Vặt", price: 42000, active: true, sold: 68, icon: "🧀" },
+      { id: 33, name: "Hướng dương vị dừa", cat: "Bánh Ngọt & Ăn Vặt", price: 15000, active: true, sold: 140, icon: "🌻" },
+      { id: 34, name: "Khô bò lá chanh", cat: "Bánh Ngọt & Ăn Vặt", price: 35000, active: true, sold: 88, icon: "🥩" }
+    ];
+
+    // Tạo nhanh đủ 80 món giả lập phong phú cho quán F&B
+    for (let i = 35; i <= 80; i++) {
+      const cat = CATEGORIES[1 + (i % 5)];
+      menuList.push({
+        id: i,
+        name: `Đặc sản quán số ${i} (${cat})`,
+        cat: cat,
+        price: 25000 + ((i * 1000) % 25000),
+        active: i % 14 !== 0,
+        sold: Math.floor(Math.random() * 80) + 10,
+        icon: cat.includes("Bánh") ? "🥪" : (cat.includes("Trà") ? "🧋" : "☕")
+      });
+    }
+
+    // 2. DỮ LIỆU KHO
+    let inventory = [
+      { id: "NL01", name: "Hạt Cafe Robusta Buôn Ma Thuột", unit: "Kg", stock: 18.5, min: 10, status: "Đủ dùng" },
+      { id: "NL02", name: "Hạt Cafe Arabica Cầu Đất", unit: "Kg", stock: 4.0, min: 5, status: "Sắp hết" },
+      { id: "NL03", name: "Sữa đặc Ngôi Sao Phương Nam", unit: "Lon", stock: 6, min: 12, status: "Sắp hết" },
+      { id: "NL04", name: "Sữa tươi thanh trùng DalatMilk", unit: "Lít", stock: 15, min: 10, status: "Đủ dùng" },
+      { id: "NL05", name: "Trà Oolong Bảo Lộc", unit: "Kg", stock: 3.2, min: 2, status: "Đủ dùng" },
+      { id: "NL06", name: "Đào ngâm đóng hộp Kronos", unit: "Hộp", stock: 2, min: 8, status: "Nguy cấp" },
+      { id: "NL07", name: "Đường cát Biên Hòa", unit: "Kg", stock: 25.0, min: 10, status: "Đủ dùng" },
+      { id: "NL08", name: "Syrup Caramel Monin", unit: "Chai", stock: 2, min: 2, status: "Đủ dùng" },
+      { id: "NL09", name: "Ly giấy mang đi 500ml", unit: "Cái", stock: 280, min: 100, status: "Đủ dùng" },
+      { id: "NL10", name: "Ống hút giấy & bọc", unit: "Gói", stock: 8, min: 5, status: "Đủ dùng" }
+    ];
+
+    // 3. NHÂN VIÊN
+    let staffList = [
+      { id: "NV01", name: "Trần Anh Tuấn", phone: "0901234567", role: "Chủ quán / Quản lý", shift: "Toàn thời gian", status: "Đang làm việc" },
+      { id: "NV02", name: "Lê Thị Mai", phone: "0912345678", role: "Trưởng ca / Barista", shift: "Ca sáng (06:30 - 14:30)", status: "Đang làm việc" },
+      { id: "NV03", name: "Nguyễn Văn Hùng", phone: "0934567890", role: "Pha chế (Barista)", shift: "Ca sáng (06:30 - 14:30)", status: "Đang làm việc" },
+      { id: "NV04", name: "Phạm Thùy Linh", phone: "0945678901", role: "Thu ngân / Phục vụ", shift: "Ca sáng (06:30 - 14:30)", status: "Đang làm việc" },
+      { id: "NV05", name: "Đỗ Quốc Bảo", phone: "0967890123", role: "Phục vụ / Chạy bàn", shift: "Ca chiều (14:30 - 22:30)", status: "Chưa vào ca" },
+      { id: "NV06", name: "Hoàng Ngọc Ánh", phone: "0978901234", role: "Pha chế", shift: "Ca chiều (14:30 - 22:30)", status: "Chưa vào ca" },
+      { id: "NV07", name: "Vũ Hải Đăng", phone: "0989012345", role: "Bảo vệ / Dắt xe", shift: "Toàn thời gian", status: "Đang làm việc" },
+      { id: "NV08", name: "Nguyễn Phương Thảo", phone: "0956789012", role: "Thu ngân ca tối", shift: "Ca chiều (14:30 - 22:30)", status: "Chưa vào ca" }
+    ];
+
+    // 4. DANH SÁCH ĐƠN HÀNG
+    let orders = [
+      { id: "CF-1081", time: "09:42", table: "Mang đi", items: "1x Cà phê sữa đá, 1x Trà đào cam sả", total: 63000, status: "Hoàn thành" },
+      { id: "CF-1082", time: "09:55", table: "Bàn 2", items: "2x Cà phê muối, 1x Tiramisu cacao", total: 102000, status: "Hoàn thành" },
+      { id: "CF-1083", time: "10:05", table: "Bàn 1", items: "1x Bạc xỉu 3 tầng, 1x Croissant bơ tỏi", total: 56000, status: "Đang pha chế" },
+      { id: "CF-1084", time: "10:14", table: "Bàn 4", items: "1x Cold Brew cam vàng, 1x Americano Đá", total: 77000, status: "Đang pha chế" },
+      { id: "CF-1085", time: "10:20", table: "Mang đi", items: "2x Trà chanh giã tay", total: 60000, status: "Chờ xác nhận" }
+    ];
+
+    // 5. GIỎ HÀNG POS HIỆN TẠI
+    let currentCart = [];
+    let selectedCategory = "Tất cả";
+
+    // --- TIỆN ÍCH DÙNG CHUNG ---
+    function formatMoney(num) {
+      return Number(num).toLocaleString('vi-VN') + ' đ';
+    }
+
+    function showToast(msg, type = "success") {
+      const box = document.getElementById("toast-box");
+      const toast = document.createElement("div");
+      toast.className = `toast ${type}`;
+      toast.innerHTML = `<span>${type === 'success' ? '✅' : (type === 'warning' ? '⚠️' : 'ℹ️')}</span> <span>${msg}</span>`;
+      box.appendChild(toast);
+      setTimeout(() => { toast.remove(); }, 3000);
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll(".nav-btn").forEach(btn => btn.classList.remove("active"));
+      document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+
+      const targetBtn = Array.from(document.querySelectorAll(".nav-btn")).find(b => b.getAttribute("onclick").includes(tabId));
+      if (targetBtn) targetBtn.classList.add("active");
+
+      const targetTab = document.getElementById(`tab-${tabId}`);
+      if (targetTab) targetTab.classList.add("active");
+
+      // Auto update views when tab opens
+      if (tabId === 'dashboard') renderDashboard();
+      if (tabId === 'pos') { renderPosFilters(); renderPosItems(); }
+      if (tabId === 'orders') renderOrdersTable();
+      if (tabId === 'menu') renderMenuManagementTable();
+      if (tabId === 'inventory') renderInventoryTable();
+      if (tabId === 'staff') renderStaffTable();
+      if (tabId === 'reports') renderReports();
+    }
+
+    // --- DASHBOARD RENDER ---
+    function renderDashboard() {
+      // Calculate revenue
+      const totalRev = orders.filter(o => o.status === "Hoàn thành").reduce((sum, o) => sum + o.total, 4500000);
+      document.getElementById("dash-revenue").innerText = formatMoney(totalRev);
+      document.getElementById("dash-orders").innerText = (orders.length + 59) + " đơn";
+
+      // Top products
+      const topList = [...menuList].sort((a,b) => b.sold - a.sold).slice(0, 5);
+      const topTbody = document.getElementById("dash-top-products");
+      topTbody.innerHTML = topList.map(item => `
+        <tr>
+          <td><strong>${item.name}</strong></td>
+          <td>${formatMoney(item.price)}</td>
+          <td><span class="badge info">${item.sold} ly</span></td>
+          <td style="font-weight: 600; color: #92400e;">${formatMoney(item.sold * item.price)}</td>
+        </tr>
+      `).join("");
+
+      // Low stock
+      const lowStockList = inventory.filter(i => i.stock <= i.min);
+      document.getElementById("dash-warning").innerText = `${lowStockList.length} mục sắp hết`;
+      const stockTbody = document.getElementById("dash-low-stock");
+      stockTbody.innerHTML = lowStockList.map(i => `
+        <tr>
+          <td><strong>${i.name}</strong></td>
+          <td><span style="color: #dc2626; font-weight: 700;">${i.stock} ${i.unit}</span></td>
+          <td>${i.min} ${i.unit}</td>
+          <td><span class="badge danger">${i.status}</span></td>
+        </tr>
+      `).join("");
+    }
+
+    // --- POS & CART FUNCTIONS ---
+    function renderPosFilters() {
+      const container = document.getElementById("pos-category-filters");
+      container.innerHTML = CATEGORIES.map(cat => `
+        <button class="cat-pill ${selectedCategory === cat ? 'active' : ''}" onclick="filterPosCategory('${cat}')">${cat}</button>
+      `).join("");
+    }
+
+    function filterPosCategory(cat) {
+      selectedCategory = cat;
+      renderPosFilters();
+      renderPosItems();
+    }
+
+    function renderPosItems() {
+      const search = (document.getElementById("pos-search").value || "").toLowerCase().trim();
+      const grid = document.getElementById("pos-products-grid");
+
+      const filtered = menuList.filter(item => {
+        const matchCat = (selectedCategory === "Tất cả" || item.cat === selectedCategory);
+        const matchSearch = item.name.toLowerCase().includes(search);
+        return matchCat && matchSearch;
+      });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `<div style="grid-column: 1/-1; padding: 40px; text-align: center; color: var(--text-muted);">Không tìm thấy món ăn/uống phù hợp.</div>`;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(item => `
+        <div class="menu-item-card" onclick="addToCart(${item.id})">
+          ${!item.active ? '<span class="item-badge-out">Hết hàng</span>' : ''}
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <div class="item-icon-box">${item.icon || '☕'}</div>
+            <div>
+              <div class="item-name">${item.name}</div>
+              <div class="item-cat">${item.cat}</div>
+            </div>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: baseline;">
+            <div class="item-price">${formatMoney(item.price)}</div>
+            <button class="btn btn-sm btn-primary" ${!item.active ? 'disabled style="opacity:0.5"' : ''}>+ Thêm</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function addToCart(itemId) {
+      const product = menuList.find(m => m.id === itemId);
+      if (!product) return;
+      if (!product.active) {
+        showToast(`Món "${product.name}" hiện đang tạm ngưng phục vụ!`, "warning");
+        return;
+      }
+
+      const exist = currentCart.find(ci => ci.id === itemId);
+      if (exist) {
+        exist.qty += 1;
+      } else {
+        currentCart.push({
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          qty: 1
+        });
+      }
+      renderCart();
+      showToast(`Đã thêm "${product.name}" vào giỏ!`);
+    }
+
+    function updateCartQty(itemId, delta) {
+      const item = currentCart.find(ci => ci.id === itemId);
+      if (!item) return;
+      item.qty += delta;
+      if (item.qty <= 0) {
+        currentCart = currentCart.filter(ci => ci.id !== itemId);
+      }
+      renderCart();
+    }
+
+    function clearCart() {
+      if (currentCart.length === 0) return;
+      currentCart = [];
+      renderCart();
+      showToast("Đã dọn sạch giỏ hàng.");
+    }
+
+    function renderCart() {
+      const container = document.getElementById("cart-items-container");
+      const targetTable = document.getElementById("pos-table-select").value;
+      document.getElementById("current-order-target").innerText = "Mục tiêu: " + targetTable;
+
+      if (currentCart.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; color: var(--text-muted); margin-top: 50px;">
+            <div style="font-size: 34px; margin-bottom: 8px;">🛒</div>
+            <div>Chưa có món nào được chọn.</div>
+            <div style="font-size: 0.75rem;">Bấm vào món bên trái để thêm vào đơn</div>
+          </div>
+        `;
+        document.getElementById("cart-subtotal").innerText = "0 đ";
+        document.getElementById("cart-total").innerText = "0 đ";
+        return;
+      }
+
+      let subtotal = 0;
+      container.innerHTML = currentCart.map(item => {
+        const itemTotal = item.price * item.qty;
+        subtotal += itemTotal;
+        return `
+          <div class="cart-item">
+            <div class="cart-item-info">
+              <div class="cart-item-name">${item.name}</div>
+              <div class="cart-item-price">${formatMoney(item.price)} × ${item.qty} = ${formatMoney(itemTotal)}</div>
+            </div>
+            <div class="cart-qty-ctrl">
+              <button class="qty-btn" onclick="updateCartQty(${item.id}, -1)">-</button>
+              <span class="cart-qty-val">${item.qty}</span>
+              <button class="qty-btn" onclick="updateCartQty(${item.id}, 1)">+</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      document.getElementById("cart-subtotal").innerText = formatMoney(subtotal);
+      document.getElementById("cart-total").innerText = formatMoney(subtotal);
+    }
+
+    function checkoutOrder() {
+      if (currentCart.length === 0) {
+        showToast("Vui lòng chọn ít nhất 1 món để thanh toán!", "warning");
+        return;
+      }
+
+      const table = document.getElementById("pos-table-select").value;
+      const subtotal = currentCart.reduce((s, i) => s + (i.price * i.qty), 0);
+      const itemsSummary = currentCart.map(i => `${i.qty}x ${i.name}`).join(", ");
+      const orderCode = "CF-" + Math.floor(1000 + Math.random() * 9000);
+      const now = new Date();
+      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+      // Add to orders
+      orders.unshift({
+        id: orderCode,
+        time: timeStr,
+        table: table,
+        items: itemsSummary,
+        total: subtotal,
+        status: "Hoàn thành"
+      });
+
+      // Update sold counts
+      currentCart.forEach(ci => {
+        const prod = menuList.find(m => m.id === ci.id);
+        if (prod) prod.sold += ci.qty;
+      });
+
+      currentCart = [];
+      renderCart();
+      showToast(`Đã thanh toán thành công đơn ${orderCode} (${formatMoney(subtotal)})!`);
+      renderDashboard();
+    }
+
+    function saveDraftOrder() {
+      if (currentCart.length === 0) {
+        showToast("Giỏ hàng đang trống!", "warning");
+        return;
+      }
+      const table = document.getElementById("pos-table-select").value;
+      const subtotal = currentCart.reduce((s, i) => s + (i.price * i.qty), 0);
+      const itemsSummary = currentCart.map(i => `${i.qty}x ${i.name}`).join(", ");
+      const orderCode = "CF-" + Math.floor(1000 + Math.random() * 9000);
+      const now = new Date();
+      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+      orders.unshift({
+        id: orderCode,
+        time: timeStr,
+        table: table,
+        items: itemsSummary,
+        total: subtotal,
+        status: "Đang pha chế"
+      });
+
+      currentCart = [];
+      renderCart();
+      showToast(`Đã gửi đơn ${orderCode} đến Barista pha chế!`);
+      renderDashboard();
+    }
+
+    // --- QUẢN LÝ ĐƠN HÀNG TABLE ---
+    function renderOrdersTable() {
+      const search = (document.getElementById("order-search")?.value || "").toLowerCase().trim();
+      const filterStatus = document.getElementById("order-status-filter")?.value || "ALL";
+      const tbody = document.getElementById("orders-table-body");
+
+      const filtered = orders.filter(o => {
+        const matchText = o.id.toLowerCase().includes(search) || o.table.toLowerCase().includes(search);
+        const matchStatus = filterStatus === "ALL" || o.status === filterStatus;
+        return matchText && matchStatus;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 30px;">Không có đơn hàng nào khớp điều kiện tìm kiếm.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(o => {
+        let badgeClass = "info";
+        if (o.status === "Hoàn thành") badgeClass = "success";
+        if (o.status === "Đang pha chế") badgeClass = "warning";
+        if (o.status === "Đã hủy") badgeClass = "danger";
+
+        return `
+          <tr>
+            <td><strong>#${o.id}</strong></td>
+            <td>${o.time}</td>
+            <td><span class="badge" style="background:#e2e8f0; color:#334155;">${o.table}</span></td>
+            <td style="max-width: 280px;">${o.items}</td>
+            <td style="font-weight: 700; color: #92400e;">${formatMoney(o.total)}</td>
+            <td><span class="badge ${badgeClass}">${o.status}</span></td>
+            <td>
+              <select class="input-control" style="padding: 4px 8px; font-size: 0.78rem;" onchange="updateOrderStatus('${o.id}', this.value)">
+                <option value="Chờ xác nhận" ${o.status === 'Chờ xác nhận' ? 'selected' : ''}>Chờ xác nhận</option>
+                <option value="Đang pha chế" ${o.status === 'Đang pha chế' ? 'selected' : ''}>Đang pha chế</option>
+                <option value="Hoàn thành" ${o.status === 'Hoàn thành' ? 'selected' : ''}>Hoàn thành</option>
+                <option value="Đã hủy" ${o.status === 'Đã hủy' ? 'selected' : ''}>Đã hủy</option>
+              </select>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function updateOrderStatus(orderId, newStatus) {
+      const order = orders.find(o => o.id === orderId);
+      if (order) {
+        order.status = newStatus;
+        showToast(`Đơn #${orderId} chuyển sang: "${newStatus}"`);
+        renderDashboard();
+        renderOrdersTable();
+      }
+    }
+
+    // --- QUẢN LÝ THỰC ĐƠN TABLE ---
+    function renderMenuManagementTable() {
+      const search = (document.getElementById("menu-search-input")?.value || "").toLowerCase().trim();
+      const tbody = document.getElementById("menu-management-body");
+
+      const filtered = menuList.filter(m => m.name.toLowerCase().includes(search) || m.cat.toLowerCase().includes(search));
+
+      tbody.innerHTML = filtered.map(m => `
+        <tr>
+          <td>#${m.id}</td>
+          <td><strong>${m.name}</strong></td>
+          <td><span class="badge info">${m.cat}</span></td>
+          <td style="font-weight: 600;">${formatMoney(m.price)}</td>
+          <td>
+            <button class="badge ${m.active ? 'success' : 'danger'}" style="cursor: pointer; border: none;" onclick="toggleMenuStatus(${m.id})">
+              ${m.active ? '🟢 Đang bán' : '🔴 Hết món'}
+            </button>
+          </td>
+          <td>
+            <button class="btn btn-sm btn-outline" onclick="openEditMenuPriceModal(${m.id})">Sửa giá</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteMenuItem(${m.id})">Xóa</button>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    function toggleMenuStatus(id) {
+      const item = menuList.find(m => m.id === id);
+      if (item) {
+        item.active = !item.active;
+        showToast(`Đã cập nhật trạng thái món: ${item.name} (${item.active ? 'Còn hàng' : 'Hết hàng'})`);
+        renderMenuManagementTable();
+      }
+    }
+
+    function deleteMenuItem(id) {
+      if (confirm("Bạn có chắc chắn muốn xóa món này khỏi menu không?")) {
+        menuList = menuList.filter(m => m.id !== id);
+        showToast("Đã xóa món khỏi thực đơn.");
+        renderMenuManagementTable();
+      }
+    }
+
+    function openAddMenuModal() {
+      const modal = document.getElementById("generic-modal");
+      document.getElementById("modal-title").innerText = "Thêm Món Mới Vào Menu";
+      document.getElementById("modal-content").innerHTML = `
+        <div>
+          <label style="font-size: 0.85rem; font-weight: 600;">Tên món mới</label>
+          <input type="text" id="new-item-name" class="input-control" style="width: 100%; margin-top: 4px;" placeholder="Ví dụ: Trà Mãng Cầu Nhiệt Đới">
+        </div>
+        <div>
+          <label style="font-size: 0.85rem; font-weight: 600;">Danh mục</label>
+          <select id="new-item-cat" class="input-control" style="width: 100%; margin-top: 4px;">
+            ${CATEGORIES.filter(c => c !== "Tất cả").map(c => `<option value="${c}">${c}</option>`).join("")}
+          </select>
+        </div>
+        <div>
+          <label style="font-size: 0.85rem; font-weight: 600;">Giá bán (VNĐ)</label>
+          <input type="number" id="new-item-price" class="input-control" style="width: 100%; margin-top: 4px;" placeholder="35000">
+        </div>
+      `;
+
+      const confirmBtn = document.getElementById("modal-confirm-btn");
+      confirmBtn.onclick = () => {
+        const name = document.getElementById("new-item-name").value.trim();
+        const cat = document.getElementById("new-item-cat").value;
+        const price = parseInt(document.getElementById("new-item-price").value);
+
+        if (!name || isNaN(price) || price <= 0) {
+          alert("Vui lòng điền đầy đủ tên món và giá hợp lệ!");
+          return;
+        }
+
+        const newId = menuList.length > 0 ? Math.max(...menuList.map(m => m.id)) + 1 : 1;
+        menuList.unshift({
+          id: newId,
+          name: name,
+          cat: cat,
+          price: price,
+          active: true,
+          sold: 0,
+          icon: "☕"
+        });
+
+        closeModal();
+        showToast(`Đã thêm thành công món "${name}"!`);
+        renderMenuManagementTable();
+      };
+
+      modal.classList.add("open");
+    }
+
+    function openEditMenuPriceModal(id) {
+      const item = menuList.find(m => m.id === id);
+      if (!item) return;
+
+      const modal = document.getElementById("generic-modal");
+      document.getElementById("modal-title").innerText = `Cập Nhật Giá: ${item.name}`;
+      document.getElementById("modal-content").innerHTML = `
+        <div>
+          <label style="font-size: 0.85rem; font-weight: 600;">Giá hiện tại: ${formatMoney(item.price)}</label>
+          <input type="number" id="edit-item-price" class="input-control" style="width: 100%; margin-top: 6px;" value="${item.price}">
+        </div>
+      `;
+
+      const confirmBtn = document.getElementById("modal-confirm-btn");
+      confirmBtn.onclick = () => {
+        const newPrice = parseInt(document.getElementById("edit-item-price").value);
+        if (isNaN(newPrice) || newPrice <= 0) {
+          alert("Giá tiền không hợp lệ!");
+          return;
+        }
+        item.price = newPrice;
+        closeModal();
+        showToast(`Đã đổi giá món "${item.name}" thành ${formatMoney(newPrice)}`);
+        renderMenuManagementTable();
+      };
+
+      modal.classList.add("open");
+    }
+
+    // --- QUẢN LÝ KHO ---
+    function renderInventoryTable() {
+      const tbody = document.getElementById("inventory-table-body");
+      tbody.innerHTML = inventory.map(item => {
+        let badgeClass = "success";
+        if (item.status === "Sắp hết") badgeClass = "warning";
+        if (item.status === "Nguy cấp") badgeClass = "danger";
+
+        return `
+          <tr>
+            <td><code>${item.id}</code></td>
+            <td><strong>${item.name}</strong></td>
+            <td>${item.unit}</td>
+            <td style="font-weight: 700; font-size: 0.95rem;">${item.stock}</td>
+            <td>${item.min} ${item.unit}</td>
+            <td><span class="badge ${badgeClass}">${item.status}</span></td>
+            <td>
+              <button class="btn btn-sm btn-outline" onclick="adjustStockPrompt('${item.id}')">+ Nhập kho</button>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function adjustStockPrompt(nlId) {
+      const item = inventory.find(i => i.id === nlId);
+      if (!item) return;
+      const addQty = prompt(`Nhập số lượng thêm cho "${item.name}" (${item.unit}):`, "10");
+      if (addQty && !isNaN(addQty) && Number(addQty) > 0) {
+        item.stock = parseFloat((item.stock + Number(addQty)).toFixed(1));
+        if (item.stock > item.min) {
+          item.status = "Đủ dùng";
+        }
+        showToast(`Đã nhập thêm ${addQty} ${item.unit} ${item.name}!`);
+        renderInventoryTable();
+        renderDashboard();
+      }
+    }
+
+    function openAddStockModal() {
+      const name = prompt("Tên nguyên vật liệu mới:");
+      if (!name) return;
+      const unit = prompt("Đơn vị tính (Kg, Lít, Lon, Hộp...):", "Kg");
+      const stock = parseFloat(prompt("Số lượng ban đầu:", "10") || "10");
+      const min = parseFloat(prompt("Định mức cảnh báo tối thiểu:", "5") || "5");
+
+      const newId = "NL" + String(inventory.length + 1).padStart(2, "0");
+      inventory.push({
+        id: newId,
+        name: name,
+        unit: unit,
+        stock: stock,
+        min: min,
+        status: stock <= min ? "Sắp hết" : "Đủ dùng"
+      });
+      showToast(`Đã thêm nguyên liệu "${name}" vào hệ thống kho!`);
+      renderInventoryTable();
+      renderDashboard();
+    }
+
+    // --- QUẢN LÝ NHÂN VIÊN ---
+    function renderStaffTable() {
+      const tbody = document.getElementById("staff-table-body");
+      tbody.innerHTML = staffList.map(s => `
+        <tr>
+          <td><code>${s.id}</code></td>
+          <td><strong>${s.name}</strong></td>
+          <td>${s.phone}</td>
+          <td><span class="badge info">${s.role}</span></td>
+          <td>${s.shift}</td>
+          <td>
+            <span class="badge ${s.status === 'Đang làm việc' ? 'success' : 'warning'}">
+              ${s.status}
+            </span>
+          </td>
+          <td>
+            <button class="btn btn-sm btn-outline" onclick="toggleStaffShift('${s.id}')">Đổi trạng thái ca</button>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    function toggleStaffShift(staffId) {
+      const member = staffList.find(s => s.id === staffId);
+      if (member) {
+        member.status = member.status === "Đang làm việc" ? "Chưa vào ca" : "Đang làm việc";
+        showToast(`Đã cập nhật trạng thái làm việc cho ${member.name}`);
+        renderStaffTable();
+      }
+    }
+
+    function openAddStaffModal() {
+      const name = prompt("Họ và tên nhân viên mới:");
+      if (!name) return;
+      const phone = prompt("Số điện thoại liên hệ:", "09");
+      const role = prompt("Vai trò (Quản lý / Barista / Thu ngân / Phục vụ):", "Phục vụ");
+      const shift = prompt("Ca làm việc (Ca sáng / Ca chiều / Toàn thời gian):", "Ca sáng (06:30 - 14:30)");
+
+      const newId = "NV" + String(staffList.length + 1).padStart(2, "0");
+      staffList.push({
+        id: newId,
+        name: name,
+        phone: phone,
+        role: role,
+        shift: shift,
+        status: "Đang làm việc"
+      });
+      showToast(`Đã bổ sung nhân viên "${name}" vào danh sách!`);
+      renderStaffTable();
+    }
+
+    // --- BÁO CÁO & BIỂU ĐỒ DOANH THU ---
+    function renderReports() {
+      const revenueData = [
+        { day: "Thứ 2", rev: 3800000, orders: 48 },
+        { day: "Thứ 3", rev: 4100000, orders: 54 },
+        { day: "Thứ 4", rev: 3600000, orders: 42 },
+        { day: "Thứ 5", rev: 4400000, orders: 58 },
+        { day: "Thứ 6", rev: 5200000, orders: 72 },
+        { day: "Thứ 7", rev: 6900000, orders: 94 },
+        { day: "Chủ nhật", rev: 7400000, orders: 106 }
+      ];
+
+      const maxRev = Math.max(...revenueData.map(d => d.rev));
+      const chart = document.getElementById("revenue-bar-chart");
+
+      chart.innerHTML = revenueData.map(d => {
+        const heightPercent = (d.rev / maxRev) * 100;
+        return `
+          <div class="chart-bar-group">
+            <div class="chart-bar" style="height: ${heightPercent}%;">
+              <div class="chart-tooltip">${formatMoney(d.rev)} (${d.orders} đơn)</div>
+            </div>
+            <div class="chart-label">${d.day}</div>
+          </div>
+        `;
+      }).join("");
+
+      // Report Table
+      const reportTbody = document.getElementById("daily-report-table");
+      reportTbody.innerHTML = revenueData.map(d => {
+        const cost = Math.round(d.rev * 0.38); // Giả lập tỷ lệ giá vốn 38%
+        const profit = d.rev - cost;
+        return `
+          <tr>
+            <td><strong>${d.day}</strong></td>
+            <td><span class="badge info">${d.orders} đơn</span></td>
+            <td style="font-weight: 700; color: #166534;">${formatMoney(d.rev)}</td>
+            <td style="color: #64748b;">${formatMoney(cost)}</td>
+            <td style="font-weight: 700; color: #92400e;">${formatMoney(profit)}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    // --- MODAL UTILS ---
+    function closeModal() {
+      document.getElementById("generic-modal").classList.remove("open");
+    }
+
+    // Initial render
+    window.addEventListener("DOMContentLoaded", () => {
+      renderDashboard();
+      renderPosFilters();
+      renderPosItems();
+      renderCart();
+    });
+  </script>
+</body>
+</html>
